@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnablePassthrough
 import re
 import tempfile
 
-os.environ["GROQ_API_KEY"] = ""
+os.environ["GROQ_API_KEY"] = "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"
 llm = ChatGroq(model="llama3-8b-8192")
 
 
@@ -28,21 +28,48 @@ import re
 
 
 examples = [
-    {"input": "Show the average rating and number of reviews for each restaurant, but only for those with more than 10 reviews.",
-     "query": "SELECT r.restaurant_name, AVG(rv.rating) AS avg_rating, COUNT(rv.review_id) AS review_count FROM restaurants r JOIN reviews rv ON r.restaurant_id = rv.restaurant_id GROUP BY r.restaurant_id HAVING review_count > 10 ORDER BY avg_rating DESC;"},
-    {"input": "What are the top 5 customers by total order value?",
-     "query": "SELECT c.customer_name, SUM(o.total_amount) AS total_value FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id ORDER BY total_value DESC LIMIT 5;"},
-    {"input":"Show all items sorted by price.",
-     "query": "SELECT * FROM items ORDER BY price;"},
-     {"input": "How many accidents happened?",
-     "query": "SELECT COUNT(*) FROM accidents;"},
-    {"input": "What is the average age of users?",
-     "query": "SELECT AVG(age) FROM users;"},
-    {"input": "List the top 5 products by sales.",
-     "query": "SELECT product_name, SUM(quantity) as total_sales FROM sales JOIN products ON sales.product_id = products.id GROUP BY product_id ORDER BY total_sales DESC LIMIT 5;"},
-    {"input": "List the products that have never been ordered.",
-     "query": "SELECT p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.order_id IS NULL;"}
-    
+    {
+        "input": "Show the average rating and number of reviews for each restaurant, but only for those with more than 10 reviews.",
+        "query": "SELECT r.restaurant_name, AVG(rv.rating) AS avg_rating, COUNT(rv.review_id) AS review_count FROM restaurants r JOIN reviews rv ON r.restaurant_id = rv.restaurant_id GROUP BY r.restaurant_id HAVING review_count > 10 ORDER BY avg_rating DESC;",
+        "SQLResult": "[('Gourmet Delight', 4.8, 15), ('Tasty Bites', 4.5, 22), ('Spice Palace', 4.2, 18)]",
+        "Answer": "The results show 3 restaurants with more than 10 reviews. Gourmet Delight has the highest average rating of 4.8 with 15 reviews, followed by Tasty Bites with 4.5 and 22 reviews, and Spice Palace with 4.2 and 18 reviews."
+    },
+    {
+        "input": "What are the top 5 customers by total order value?",
+        "query": "SELECT c.customer_name, SUM(o.total_amount) AS total_value FROM customers c JOIN orders o ON c.customer_id = o.customer_id GROUP BY c.customer_id ORDER BY total_value DESC LIMIT 5;",
+        "SQLResult": "[('John Doe', 5000.50), ('Jane Smith', 4500.75), ('Mike Johnson', 4200.25), ('Emily Brown', 3800.00), ('David Lee', 3500.50)]",
+        "Answer": "The top 5 customers by total order value are: 1. John Doe ($5000.50), 2. Jane Smith ($4500.75), 3. Mike Johnson ($4200.25), 4. Emily Brown ($3800.00), and 5. David Lee ($3500.50)."
+    },
+    {
+        "input": "Show all items sorted by price.",
+        "query": "SELECT * FROM items ORDER BY price;",
+        "SQLResult": "[(1, 'Pencil', 0.50), (2, 'Eraser', 1.00), (3, 'Notebook', 3.50), (4, 'Backpack', 25.00), (5, 'Laptop', 800.00)]",
+        "Answer": "The items sorted by price from lowest to highest are: Pencil ($0.50), Eraser ($1.00), Notebook ($3.50), Backpack ($25.00), and Laptop ($800.00)."
+    },
+    {
+        "input": "How many accidents happened?",
+        "query": "SELECT COUNT(*) FROM accidents;",
+        "SQLResult": "[(150,)]",
+        "Answer": "There were 150 accidents recorded."
+    },
+    {
+        "input": "What is the average age of users?",
+        "query": "SELECT AVG(age) FROM users;",
+        "SQLResult": "[(32.5,)]",
+        "Answer": "The average age of users is 32.5 years."
+    },
+    {
+        "input": "List the top 5 products by sales.",
+        "query": "SELECT product_name, SUM(quantity) as total_sales FROM sales JOIN products ON sales.product_id = products.id GROUP BY product_id ORDER BY total_sales DESC LIMIT 5;",
+        "SQLResult": "[('iPhone', 1500), ('Samsung TV', 1200), ('Nike Shoes', 1000), ('PlayStation 5', 800), ('AirPods', 750)]",
+        "Answer": "The top 5 products by sales are: 1. iPhone (1500 units), 2. Samsung TV (1200 units), 3. Nike Shoes (1000 units), 4. PlayStation 5 (800 units), and 5. AirPods (750 units)."
+    },
+    {
+        "input": "List the products that have never been ordered.",
+        "query": "SELECT p.product_name FROM products p LEFT JOIN order_items oi ON p.product_id = oi.product_id WHERE oi.order_id IS NULL;",
+        "SQLResult": "[('Floppy Disk',), ('VHS Player',), ('Walkman',)]",
+        "Answer": "The products that have never been ordered are: Floppy Disk, VHS Player, and Walkman."
+    }
 ]
 
 
@@ -110,7 +137,7 @@ if uploaded_file:
         
     if user_question:
         with st.spinner("Generating response..."):
-            response = chain.invoke({"question": user_question, "input": user_question})
+            response = chain.invoke({"question": user_question, "input": user_question,"top_k":5,"table_info": db.get_table_info()})
         st.write(response)
 else:
     st.info("Please upload a SQLite database file to begin")
