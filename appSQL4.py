@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnablePassthrough
 import re
 import tempfile
 
-os.environ["GROQ_API_KEY"] = "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"
+os.environ["GROQ_API_KEY"] = ""
 llm = ChatGroq(model="llama3-8b-8192")
 
 
